@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="max-w-4xl mx-auto p-8">
+        <h1 class="text-3xl font-bold text-center mb-8">Teacher Dashboard Fix Test</h1>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Instructions</h2>
+            <ol class="list-decimal list-inside space-y-2">
+                <li>Open your browser's developer console (F12)</li>
+                <li>Refresh the teacher dashboard page</li>
+                <li>Check if the "Loading your courses..." message disappears</li>
+                <li>Look for any error messages in the console</li>
+            </ol>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">Expected Behavior After Fix</h2>
+            <ul class="list-disc list-inside space-y-2">
+                <li>The loading spinner should disappear after initialization</li>
+                <li>If there are no errors, you should see your courses and students</li>
+                <li>If there are errors, they should be logged to the console but the loading state should still be cleared</li>
+                <li>If there's no token or it's invalid, you should be redirected to the login page</li>
+            </ul>
+        </div>
+        
+        <div class="bg-blue-50 rounded-lg shadow-md p-6 mt-6">
+            <h2 class="text-xl font-semibold mb-4">Common Issues and Solutions</h2>
+            <ul class="list-disc list-inside space-y-2">
+                <li><strong>Still seeing "Loading your courses..."</strong>: Check the browser console for JavaScript errors</li>
+                <li><strong>Redirected to login page</strong>: Try logging in again to get a fresh token</li>
+                <li><strong>No courses displayed</strong>: Check if the API is returning course data</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

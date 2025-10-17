@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Check Token</title>
+</head>
+<body>
+    <h1>Token Information</h1>
+    <div id="token-info"></div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const tokenInfo = document.getElementById('token-info');
+        
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                tokenInfo.innerHTML = `
+                    <p><strong>Token exists:</strong> Yes</p>
+                    <p><strong>Name:</strong> ${payload.name || 'N/A'}</p>
+                    <p><strong>Role:</strong> ${payload.role || 'N/A'}</p>
+                    <p><strong>Email:</strong> ${payload.email || 'N/A'}</p>
+                    <p><strong>Token:</strong> ${token.substring(0, 50)}...</p>
+                `;
+            } catch (error) {
+                tokenInfo.innerHTML = `<p><strong>Error parsing token:</strong> ${error.message}</p>`;
+            }
+        } else {
+            tokenInfo.innerHTML = '<p><strong>Token exists:</strong> No</p>';
+        }
+    </script>
+</body>
+</html>

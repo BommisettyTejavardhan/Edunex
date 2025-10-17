@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test LocalStorage</title>
+</head>
+<body>
+    <h1>Test LocalStorage Token</h1>
+    <button onclick="checkToken()">Check Token</button>
+    <button onclick="setToken()">Set Token</button>
+    <button onclick="clearToken()">Clear Token</button>
+    <div id="result"></div>
+
+    <script>
+        // Generate a valid token for testing
+        const validToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6IkRyLiBTbWl0aCIsInJvbGUiOiJUZWFjaGVyIiwiaWF0IjoxNzYwNjI3Nzg1LCJleHAiOjE3NjMyMTk3ODV9.uxfivkPR07ASvYt5O36w7iDBOAKa1Q7vA8Hhj8EKoso';
+        
+        function checkToken() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                document.getElementById('result').innerHTML = '<p>Token found: ' + token.substring(0, 50) + '...</p>';
+                
+                // Try to decode the token
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    document.getElementById('result').innerHTML += '<p>Decoded payload: ' + JSON.stringify(payload) + '</p>';
+                } catch (e) {
+                    document.getElementById('result').innerHTML += '<p>Error decoding token: ' + e.message + '</p>';
+                }
+            } else {
+                document.getElementById('result').innerHTML = '<p>No token found in localStorage</p>';
+            }
+        }
+        
+        function setToken() {
+            localStorage.setItem('token', validToken);
+            document.getElementById('result').innerHTML = '<p>Token set in localStorage</p>';
+        }
+        
+        function clearToken() {
+            localStorage.removeItem('token');
+            document.getElementById('result').innerHTML = '<p>Token cleared from localStorage</p>';
+        }
+    </script>
+</body>
+</html>
