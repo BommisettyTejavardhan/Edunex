@@ -272,6 +272,203 @@ const getMySubmissions = asyncHandler(async (req, res) => {
   res.json(submissions);
 });
 
+// @desc    Get student grades by course
+// @route   GET /api/submissions/course/:courseId/grades
+// @access  Private/Student
+const getCourseGrades = asyncHandler(async (req, res) => {
+  const db = getDB();
+  const { Submission, Assignment } = db;
+  
+  const submissions = await Submission.findAll({
+    where: { studentId: req.user.id },
+    include: [
+      {
+        model: Assignment,
+        as: 'assignment',
+        where: { courseId: req.params.courseId },
+        attributes: ['id', 'title', 'dueDate', 'courseId']
+      }
+    ],
+    order: [['submittedAt', 'DESC']]
+  });
+  
+  // Calculate average grade
+  const gradedSubmissions = submissions.filter(s => s.grade !== null && s.grade !== undefined);
+  const averageGrade = gradedSubmissions.length > 0
+    ? gradedSubmissions.reduce((sum, s) => sum + s.grade, 0) / gradedSubmissions.length
+    : null;
+  
+  res.json({
+    submissions,
+    totalSubmissions: submissions.length,
+    gradedSubmissions: gradedSubmissions.length,
+    averageGrade: averageGrade ? Math.round(averageGrade * 10) / 10 : null
+  });
+});
+
+// @desc    Get all grades for a student (across all courses)
+// @route   GET /api/submissions/student/all-grades
+// @access  Private/Student
+const getAllStudentGrades = asyncHandler(async (req, res) => {
+  const db = getDB();
+  const { Submission, Assignment, Course } = db;
+  
+  const submissions = await Submission.findAll({
+    where: { 
+      studentId: req.user.id,
+      grade: { [db.sequelize.Sequelize.Op.ne]: null }
+    },
+    include: [
+      {
+        model: Assignment,
+        as: 'assignment',
+        attributes: ['id', 'title', 'dueDate', 'courseId'],
+        include: [
+          {
+            model: Course,
+            as: 'course',
+            attributes: ['id', 'title']
+          }
+        ]
+      }
+    ],
+    order: [['submittedAt', 'DESC']]
+  });
+  
+  // Group by course
+  const courseGrades = {};
+  submissions.forEach(sub => {
+    const courseId = sub.assignment.course.id;
+    if (!courseGrades[courseId]) {
+      courseGrades[courseId] = {
+        courseId,
+        courseTitle: sub.assignment.course.title,
+        grades: [],
+        total: 0,
+        count: 0
+      };
+    }
+    courseGrades[courseId].grades.push({
+      assignmentTitle: sub.assignment.title,
+      grade: sub.grade,
+      feedback: sub.feedback,
+      submittedAt: sub.submittedAt
+    });
+    courseGrades[courseId].total += sub.grade;
+    courseGrades[courseId].count += 1;
+  });
+  
+  // Calculate averages
+  Object.keys(courseGrades).forEach(courseId => {
+    courseGrades[courseId].average = Math.round(
+      (courseGrades[courseId].total / courseGrades[courseId].count) * 10
+    ) / 10;
+  });
+  
+  // Calculate overall average
+  const totalGrades = submissions.reduce((sum, s) => sum + s.grade, 0);
+  const overallAverage = submissions.length > 0
+    ? Math.round((totalGrades / submissions.length) * 10) / 10
+    : null;
+  
+  res.json({
+    courseGrades: Object.values(courseGrades),
+    overallAverage,
+    totalAssignments: submissions.length
+  });
+});
+
+// @desc    Get grade statistics for teacher's course
+// @route   GET /api/submissions/course/:courseId/statistics
+// @access  Private/Teacher
+const getCourseStatistics = asyncHandler(async (req, res) => {
+  const db = getDB();
+  const { Submission, Assignment, User, Course } = db;
+  
+  // Verify teacher owns the course
+  const course = await Course.findByPk(req.params.courseId);
+  if (!course || course.teacherId.toString() !== req.user.id.toString()) {
+    res.status(401);
+    throw new Error('Not authorized to view these statistics');
+  }
+  
+  // Get all assignments for the course
+  const assignments = await Assignment.findAll({
+    where: { courseId: req.params.courseId },
+    include: [
+      {
+        model: Submission,
+        as: 'submissions',
+        include: [
+          {
+            model: User,
+            as: 'student',
+            attributes: ['id', 'name', 'email']
+          }
+        ]
+      }
+    ]
+  });
+  
+  // Calculate statistics
+  let totalSubmissions = 0;
+  let gradedSubmissions = 0;
+  let totalGradeSum = 0;
+  const studentGrades = {};
+  
+  assignments.forEach(assignment => {
+    assignment.submissions.forEach(sub => {
+      totalSubmissions++;
+      if (sub.grade !== null && sub.grade !== undefined) {
+        gradedSubmissions++;
+        totalGradeSum += sub.grade;
+        
+        // Track student grades
+        const studentId = sub.studentId;
+        if (!studentGrades[studentId]) {
+          studentGrades[studentId] = {
+            studentId,
+            studentName: sub.student.name,
+            studentEmail: sub.student.email,
+            grades: [],
+            total: 0,
+            count: 0
+          };
+        }
+        studentGrades[studentId].grades.push(sub.grade);
+        studentGrades[studentId].total += sub.grade;
+        studentGrades[studentId].count += 1;
+      }
+    });
+  });
+  
+  // Calculate student averages
+  Object.keys(studentGrades).forEach(studentId => {
+    studentGrades[studentId].average = Math.round(
+      (studentGrades[studentId].total / studentGrades[studentId].count) * 10
+    ) / 10;
+  });
+  
+  const averageGrade = gradedSubmissions > 0
+    ? Math.round((totalGradeSum / gradedSubmissions) * 10) / 10
+    : null;
+  
+  res.json({
+    totalAssignments: assignments.length,
+    totalSubmissions,
+    gradedSubmissions,
+    pendingGrading: totalSubmissions - gradedSubmissions,
+    averageGrade,
+    studentGrades: Object.values(studentGrades),
+    assignments: assignments.map(a => ({
+      id: a.id,
+      title: a.title,
+      submissionCount: a.submissions.length,
+      gradedCount: a.submissions.filter(s => s.grade !== null).length
+    }))
+  });
+});
+
 module.exports = {
   submitAssignment,
   submitAssignmentWithFile,
@@ -279,4 +476,7 @@ module.exports = {
   gradeSubmission,
   getSubmissionsByAssignment,
   getMySubmissions,
+  getCourseGrades,
+  getAllStudentGrades,
+  getCourseStatistics,
 };

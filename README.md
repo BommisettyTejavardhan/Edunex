@@ -245,15 +245,29 @@ node test-assignment-submission.js
 
 ## 🌐 Deployment
 
-### Frontend
-- Deploy to Netlify or Vercel
+### Railway Deployment (Recommended)
+
+The easiest way to deploy this application is using Railway:
+
+1. **Run the deployment helper:**
+   ```bash
+   npm run deploy:railway
+   ```
+
+2. **Follow the instructions** in the [RAILWAY_DEPLOYMENT.md](./RAILWAY_DEPLOYMENT.md) guide
+
+### Manual Deployment
+
+#### Frontend
+- Deploy to Netlify, Vercel, or Railway
 - Build command: `npm run build`
 - Publish directory: `build`
 
-### Backend
+#### Backend
 - Deploy to Heroku, Railway, or Render
 - Set environment variables
 - Configure MySQL database connection
+- See [RAILWAY_DEPLOYMENT.md](./RAILWAY_DEPLOYMENT.md) for detailed instructions
 
 ## 🤝 Contributing
 

@@ -1,4 +1,11 @@
 {
+  "name": "lms-fullstack",
+  "version": "1.0.0",
+  "description": "Learning Management System - Full Stack Application",
+  "scripts": {
+    "deploy:railway": "node deploy-to-railway.js",
+    "postinstall": "cd backend && npm install && cd ../frontend && npm install"
+  },
   "dependencies": {
     "dotenv": "^17.2.3",
     "jsonwebtoken": "^9.0.2",

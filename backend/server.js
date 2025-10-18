@@ -8,12 +8,19 @@ const errorHandler = require('./middleware/errorHandler');
 // Load env vars
 dotenv.config();
 
+// Configure CORS for Railway deployment
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
 // Initialize database and start server
 initializeModels().then(async (db) => {
   const app = express();
 
   // Middleware
-  app.use(cors());
+  app.use(cors(corsOptions));
   app.use(express.json());
   
   // Serve uploaded files statically
@@ -41,9 +48,11 @@ initializeModels().then(async (db) => {
   app.get('/', (req, res) => {
     res.json({ 
       message: 'LMS API Running',
-      database: 'MySQL Connected',
-      dbType: 'mysql',
-      dbName: process.env.DB_NAME || 'lms_db'
+      database: db.sequelize ? 'MySQL Connected' : 'Mock Database',
+      dbType: process.env.DB_TYPE || 'mysql',
+      dbName: process.env.DB_NAME || 'lms_db',
+      environment: process.env.NODE_ENV || 'development',
+      port: process.env.PORT || 5000
     });
   });
 
@@ -54,16 +63,27 @@ initializeModels().then(async (db) => {
 
   app.listen(PORT, async () => {
     console.log(`✅ Server running on port ${PORT}`);
-    console.log(`✅ MySQL database connected successfully`);
-    // Initialize sample data
-    await initializeSampleData(db);
+    
+    // Check if using mock or MySQL database
+    if (db.sequelize) {
+      console.log(`✅ MySQL database connected successfully`);
+      await initializeSampleData(db);
+    } else {
+      console.log(`✅ Mock database initialized (in-memory storage)`);
+      await initializeMockData();
+    }
   });
 });
 
 // Function to initialize sample data for MySQL database
 async function initializeSampleData(db) {
   try {
-    const { User, Course } = db;
+    const { User, Course, sequelize } = db;
+    
+    // Only run for MySQL (sequelize exists)
+    if (!sequelize) {
+      return;
+    }
     
     // Check if we already have users
     const existingUsers = await User.count();

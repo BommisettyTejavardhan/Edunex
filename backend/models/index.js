@@ -7,13 +7,18 @@ const initializeModels = async () => {
   
   if (!connection.success) {
     console.error('❌ MySQL connection failed!');
-    console.error('❌ Application requires MySQL database to run.');
-    console.error('\n💡 Troubleshooting:');
-    console.error('   1. Make sure MySQL is running on your laptop');
-    console.error('   2. Check DB_PASSWORD in backend\\.env file');
-    console.error('   3. Run: node setup-database.js to create database');
-    console.error('\n⚠️  Server will not start without MySQL connection!\n');
-    process.exit(1); // Exit the application
+    console.error('⚠️  Falling back to MOCK DATABASE for development...');
+    console.error('\n💡 Note: Using in-memory mock database. Data will not persist!');
+    console.error('   To use MySQL: Configure DB_PASSWORD in backend\\.env file\n');
+    
+    // Return mock database models
+    return {
+      User: require('./MockUser'),
+      Course: require('./MockCourse'),
+      Assignment: require('./MockAssignment'),
+      Submission: require('./MockSubmission'),
+      sequelize: null // No sequelize for mock
+    };
   }
 
   const sequelize = connection.sequelize;
